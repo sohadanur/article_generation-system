@@ -3,6 +3,17 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 from blog_generator import generate_outline, write_section
+from fpdf import FPDF  # Import FPDF for PDF generation
+
+def save_as_pdf(content, filename):
+    """
+    Saves the given content as a PDF file.
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 10, txt=content)
+    pdf.output(filename)
 
 def create_blog_post(topic, blog_subject):
     try:
@@ -51,7 +62,7 @@ st.markdown(f"""
 Welcome to Blog Post Generator!\n\n
 This site is minimalistic but powerful. It uses the latest AI technology and proprietary models to generate a blog post 
 for you with just a category and subject.\n\n
-You can download the generated blog post as a text file.\n\n
+You can download the generated blog post as a text file or a PDF.\n\n
 Contact me on 'X' at [@DevAsService](https://twitter.com/DevAsService) if you have any questions.\n\n
 © 2023 [Developer Service](https://developer-service.io/)
 """)
@@ -82,11 +93,33 @@ if generate:
     history = create_blog_post(category, subject)
     st.divider()
     st.success("Blog post generated successfully!")
+
+    # Generate a unique filename
     random = uuid.uuid4().hex
-    downloaded = st.download_button("Download Blog Post",
-                                    history, f"{category}_{subject}_{random}.txt", "text/plain",
-                                    help="Note: Generated blog post will disappear, but you can keep the file")
-    if downloaded:
-        # Save file
-        with open(f"{category}_{subject}_{random}.txt", "w") as f:
-            f.write(history)
+    txt_filename = f"{category}_{subject}_{random}.txt"
+    pdf_filename = f"{category}_{subject}_{random}.pdf"
+
+    # Save as text file
+    with open(txt_filename, "w") as f:
+        f.write(history)
+
+    # Save as PDF file
+    save_as_pdf(history, pdf_filename)
+
+    # Download buttons
+    st.download_button(
+        label="Download Blog Post as Text",
+        data=history,
+        file_name=txt_filename,
+        mime="text/plain",
+        help="Download the blog post as a text file."
+    )
+
+    with open(pdf_filename, "rb") as f:
+        st.download_button(
+            label="Download Blog Post as PDF",
+            data=f,
+            file_name=pdf_filename,
+            mime="application/pdf",
+            help="Download the blog post as a PDF file."
+        )
